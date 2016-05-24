@@ -26,4 +26,5 @@ dependencies {
     compile 'com.github.johnkil.print:print:1.2.2'
     compile 'com.github.bmelnychuk:atv:1.2.+'
     compile 'org.greenrobot:eventbus:3.0.0'
+    compile 'com.jakewharton:butterknife:7.0.0'
 }

@@ -9,13 +9,14 @@
 
     
     <FrameLayout
-        android:id="@+id/containter"
+        android:id="@+id/tree_containter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
     </FrameLayout>
     
     <LinearLayout
+        android:id="@+id/detail_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"

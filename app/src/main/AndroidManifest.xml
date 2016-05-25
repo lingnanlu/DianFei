@@ -18,7 +18,7 @@
         </activity>
         <activity android:name=".SearchActivity">
         </activity>
-        <activity android:name=".TreeStructActivity">
+        <activity android:name=".TreeGraphActivity">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

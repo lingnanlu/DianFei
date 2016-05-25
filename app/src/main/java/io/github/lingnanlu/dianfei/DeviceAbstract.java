@@ -3,7 +3,7 @@ package io.github.lingnanlu.dianfei;
 /**
  * Created by rabbit on 5/24/2016.
  */
-public class Device {
+public class DeviceAbstract {
 
     /*
      * 系统中有8种类型设备, 对应着8个表, 每一个类型的设备可能管理着多种类型的其它设备, 设备之间的关系如下
@@ -28,10 +28,10 @@ public class Device {
     public String name;
     public int icon;
 
-    public Device() {
+    public DeviceAbstract() {
     }
 
-    public Device(int level, int id, String name, int icon) {
+    public DeviceAbstract(int level, int id, String name, int icon) {
         this.type = level;
         this.id = id;
         this.name = name;

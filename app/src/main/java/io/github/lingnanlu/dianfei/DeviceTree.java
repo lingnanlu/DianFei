@@ -1,4 +1,4 @@
-package io.github.lingnanlu.dianfei.Provider;
+package io.github.lingnanlu.dianfei;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -11,10 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.github.lingnanlu.dianfei.CallBack;
-import io.github.lingnanlu.dianfei.Device;
-import io.github.lingnanlu.dianfei.R;
 
 /**
  * Created by rabbit on 5/24/2016.
@@ -50,21 +46,29 @@ public class DeviceTree {
 //    }
 
     //生成整个树， 之后由该树得到其它层的树
-    public static void generateWholeTree(final CallBack<Void> cb){
+    public static void generateWholeTree(final CallBack<TreeNode> cb){
 
         new Thread(new Runnable() {
             @Override
             public void run() {
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cb.onPre();
+                    }
+                });
                 if (db == null) {
                     db = SQLiteDatabase.openDatabase("/sdcard/swordDB/DLXT", null, SQLiteDatabase.OPEN_READWRITE);
                 }
                 tree = TreeNode.root();
                 walk(tree);
+                db.close();
 
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        cb.onResult(null);
+                        cb.onResult(tree);
                     }
                 });
 
@@ -82,10 +86,10 @@ public class DeviceTree {
         for (TreeNode child : node.getChildren()) {
             walk(child);
         }
-        Device device = (Device) node.getValue();
+        DeviceAbstract device = (DeviceAbstract) node.getValue();
 
         if (device == null) {
-            devicesOfType.put(Device.TYPE_1, node.getChildren());
+            devicesOfType.put(DeviceAbstract.TYPE_1, node.getChildren());
         } else{
             List<TreeNode> children = devicesOfType.get(device.type + 1);
             if (children == null) {
@@ -102,9 +106,9 @@ public class DeviceTree {
 
     private static void innerAddDevices(TreeNode node, Integer... types) {
         String query = null;
-        Device device = (Device) node.getValue();
+        DeviceAbstract device = (DeviceAbstract) node.getValue();
         for (Integer type : types) {
-            if (type == Device.TYPE_1) {
+            if (type == DeviceAbstract.TYPE_1) {
                 query = "select Name,ID,UpNodeID,UpNodeType from Table1 order by ID";
             } else {
                 query = "select Name,ID,UpNodeID,UpNodeType from " +  "Table" + type + " where " +
@@ -117,7 +121,7 @@ public class DeviceTree {
             int count = cursor.getCount();
             for(int i = 0; i < count; i++) {
                 cursor.moveToNext();
-                Device item = new Device();
+                DeviceAbstract item = new DeviceAbstract();
                 item.id = Integer.parseInt(cursor.getString(1));
                 item.name = cursor.getString(0);
                 item.type = type;
@@ -133,31 +137,59 @@ public class DeviceTree {
     //从其它表中查询对象并做为node的子结点， 具体查询哪些表需要根据node对应的对象所在的表
     private static void addSubDevices(TreeNode node) {
 
-        Device object = (Device) node.getValue();
+        DeviceAbstract object = (DeviceAbstract) node.getValue();
         String query = null;
         if (object == null) {
             //说明node为根结点
-            innerAddDevices(node, Device.TYPE_1);
+            innerAddDevices(node, DeviceAbstract.TYPE_1);
         } else {
             switch (object.type) {
-                case Device.TYPE_1:
-                    innerAddDevices(node, Device.TYPE_2);
+                case DeviceAbstract.TYPE_1:
+                    innerAddDevices(node, DeviceAbstract.TYPE_2);
                     break;
-                case Device.TYPE_2:
-                    innerAddDevices(node, Device.TYPE_3, Device.TYPE_6);
+                case DeviceAbstract.TYPE_2:
+                    innerAddDevices(node, DeviceAbstract.TYPE_3, DeviceAbstract.TYPE_6);
                     break;
-                case Device.TYPE_3:
-                    innerAddDevices(node, Device.TYPE_4, Device.TYPE_5, Device.TYPE_6);
+                case DeviceAbstract.TYPE_3:
+                    innerAddDevices(node, DeviceAbstract.TYPE_4, DeviceAbstract.TYPE_5, DeviceAbstract.TYPE_6);
                     break;
-                case Device.TYPE_6:
-                    innerAddDevices(node, Device.TYPE_7);
+                case DeviceAbstract.TYPE_6:
+                    innerAddDevices(node, DeviceAbstract.TYPE_7);
                     break;
                 default:
                     break;
             }
         }
 
-
     }
 
+    public static void getDeviceDetail(final int id, final int type, final CallBack<DeviceDetail> cb) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                db = SQLiteDatabase.openDatabase("/sdcard/swordDB/DLXT", null, SQLiteDatabase.OPEN_READWRITE);
+                String query ="select ID as _id,EquipType,Name,UpNodeType,UpNodeID,UpNodePort," +
+                        "Location from Table" + type + " where ID='" + id + "' order" +
+                        " by ID";
+                Cursor cursor = db.rawQuery(query, null);
+                cursor.moveToNext();
+                final DeviceDetail deviceDetail = new DeviceDetail();
+                deviceDetail.id = Integer.parseInt(cursor.getString(0));
+                deviceDetail.type = Integer.parseInt(cursor.getString(1));
+                deviceDetail.name = cursor.getString(2);
+                deviceDetail.upNodeType = cursor.getString(3);
+                deviceDetail.upNodeID = cursor.getString(4);
+                deviceDetail.location = cursor.getString(6);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cb.onResult(deviceDetail);
+                    }
+                });
+                db.close();
+            }
+        }).start();
+
+    }
 }
